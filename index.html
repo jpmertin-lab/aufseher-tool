@@ -64,14 +64,16 @@ legend{font-weight:700;padding:0 6px}
   <h2>Neue Kontrolle</h2>
   <label for="s-los">Welches Los kontrollierst du?</label>
   <select id="s-los"></select>
+  <div class="box" id="s-info" style="display:none;font-weight:600"></div>
   <button id="s-go">Kontrolle starten</button>
   <p class="klein">Beim Start öffnet sich dein Mailprogramm mit fertiger Mail. Dort nur noch auf „Senden“ tippen.</p>
+  <p class="klein">Los 0 (Bayer Pharma AG, Pestalozzistraße bis Brücke Stadion/Zoo): Kontrollieren und Betreten ist dort laut Gewässerkarte verboten.</p>
   <p class="klein"><a href="#" id="s-name">Name ändern</a></p>
 </section>
 
 <!-- 3. Läuft -->
 <section class="view" id="v-aktiv">
-  <div class="aktiv"><span>Kontrolle läuft</span><b id="a-los"></b><span id="a-zeit"></span></div>
+  <div class="aktiv"><span>Kontrolle läuft</span><b id="a-los"></b><span id="a-strecke" style="display:block;font-size:.85rem;margin:6px 0"></span><span id="a-zeit"></span></div>
   <div class="box warn">Los gewechselt? Bitte zuerst die Kontrolle beenden und für das neue Los eine neue Kontrolle starten, damit die Meldung an die untere Fischereibehörde der Stadt Wuppertal für dieses Los vorliegt.</div>
   <button class="rot" id="a-ende">Kontrolle beenden</button>
   <button class="zweit" id="a-nochmal">Startmail noch einmal öffnen</button>
@@ -121,7 +123,29 @@ const CONFIG = {
   KOPIE:      "DEINE-TESTADRESSE@example.de",  // später: Adresse der Fischereigenossenschaft Mittlere Wupper
   DEMO: true                                    // false = gelben Demo-Hinweis ausblenden
 };
-const LOSE = ["I","II","III","IV","V","VI","VII","VIII","IX","X","XI","XII","XIII"];
+/* Strecken der Lose laut Gewässerkarten ab 2026 – vom Vorstand zu bestätigen */
+const LOSE = [
+  {n:"I",    von:"Wuppertalsperre (Krebsöge)", bis:"Keilbeck"},
+  {n:"II",   von:"Keilbeck", bis:"Dahlerau"},
+  {n:"III",  von:"Dahlerau", bis:"Beginn Stausee Beyenburg"},
+  {n:"IV",   von:"Beginn Stausee Beyenburg", bis:"Staumauer Stausee Beyenburg"},
+  {n:"V",    von:"Fußgängerbrücke „Beyenburger Furt“", bis:"Werksgelände Fa. Erfurt & Sohn"},
+  {n:"VI",   von:"Werksgelände Fa. Erfurt & Sohn", bis:"Eisenbahnbrücke (Lagergebäude Fa. 3M)"},
+  {n:"VII",  von:"Eisenbahnbrücke Lenneper Straße", bis:"Schwebebahn W-Oberbarmen"},
+  {n:"VIII", von:"Schwebebahn W-Oberbarmen", bis:"Schwebebahnhof Alter Markt"},
+  {n:"IX",   von:"Schwebebahnhof Alter Markt", bis:"Wupperbrücke Pestalozzistraße"},
+  {n:"X",    von:"Brücke Stadion/Zoo", bis:"Wupperbrücke Einfahrt Buchenhofen"},
+  {n:"XI",   von:"Wupperbrücke Einfahrt Buchenhofen", bis:""},
+  {n:"XII",  von:"", bis:""},
+  {n:"XIII", von:"", bis:"Einlauf Morsbach (Stadtgrenze Wuppertal)"}
+];
+function streckeText(n){
+  const l = LOSE.find(x=>x.n===n); if(!l) return "";
+  if(l.von && l.bis) return "von "+l.von+" bis "+l.bis;
+  if(l.von) return "ab "+l.von+" (Ende wird noch ergänzt)";
+  if(l.bis) return "bis "+l.bis+" (Anfang wird noch ergänzt)";
+  return "Grenzen werden noch ergänzt";
+}
 const ARTEN = {
   "Papiere": ["Kein gültiger Fischereischein vorhanden","Abgelaufener Fischereischein","Fischereischein ohne Erlaubnisschein für die Wupper","Erlaubnisschein für dieses Los nicht gültig"],
   "Fangen und Angeln": ["Fischentnahme in der Schonzeit","Fisch unter dem Mindestmaß entnommen","Fangbegrenzung überschritten","Mehr Ruten als erlaubt","Verbotene Methode oder verbotener Köder","Angeln in gesperrter Strecke"],
@@ -155,11 +179,11 @@ const KOPF = "Meldung an die untere Fischereibehörde der Stadt Wuppertal\nFisch
 
 function startMail(k){
   (k?kopieren:mail)("Kontrolle begonnen – Los "+S.aktiv.los+" – "+S.name,
-    KOPF+"Die Kontrolle hat begonnen.\n\nFischereiaufseher: "+S.name+"\nLos: "+S.aktiv.los+"\nBeginn: "+fmt(S.aktiv.start)+"\n\nMit freundlichen Grüßen\n"+S.name);
+    KOPF+"Die Kontrolle hat begonnen.\n\nFischereiaufseher: "+S.name+"\nLos: "+S.aktiv.los+"\nStrecke: "+streckeText(S.aktiv.los)+"\nBeginn: "+fmt(S.aktiv.start)+"\n\nMit freundlichen Grüßen\n"+S.name);
 }
 function endMail(k){
   const e = S.aktiv.ende;
-  let t = KOPF+"Die Kontrolle ist beendet.\n\nFischereiaufseher: "+S.name+"\nLos: "+S.aktiv.los+
+  let t = KOPF+"Die Kontrolle ist beendet.\n\nFischereiaufseher: "+S.name+"\nLos: "+S.aktiv.los+"\nStrecke: "+streckeText(S.aktiv.los)+
     "\nBeginn: "+fmt(S.aktiv.start)+"\nEnde: "+fmt(e.zeit)+
     "\nPrüfung mit digitaler Kontroll-App: "+(e.app?"Ja":"Nein (Sichtkontrolle)")+"\n\n";
   if(!e.verstoss){ t += "Verstöße: Keine\n"; }
@@ -172,13 +196,19 @@ function endMail(k){
 }
 
 /* Aufbau */
-LOSE.forEach(l=>{ const o=document.createElement("option"); o.value=l; o.textContent="Los "+l; $("s-los").appendChild(o); });
+LOSE.forEach(l=>{ const o=document.createElement("option"); o.value=l.n; o.textContent="Los "+l.n; $("s-los").appendChild(o); });
 const ph=document.createElement("option"); ph.value=""; ph.textContent="Bitte Los wählen …"; $("s-los").prepend(ph); $("s-los").value="";
 Object.keys(ARTEN).forEach(g=>{
   const f=document.createElement("fieldset"), l=document.createElement("legend"); l.textContent=g; f.appendChild(l);
   ARTEN[g].forEach(a=>{ const lb=document.createElement("label"); lb.className="chk"; lb.innerHTML='<input type="checkbox" class="art"> <span></span>'; lb.querySelector("span").textContent=a; f.appendChild(lb); });
   $("e-arten").appendChild(f);
 });
+function zeigeInfo(){
+  const v=$("s-los").value, b=$("s-info");
+  if(!v){ b.style.display="none"; return; }
+  b.style.display="block"; b.textContent="Los "+v+": "+streckeText(v);
+}
+$("s-los").onchange=zeigeInfo;
 if(!CONFIG.DEMO) $("demo").style.display="none";
 
 /* Ablauf */
@@ -186,7 +216,7 @@ function route(){
   $("s-name").parentElement.style.display=VONLINK?"none":"";
   if(!S.ok){ $("c-name").value=S.name||""; $("c-namefeld").style.display=VONLINK?"none":""; $("c-hallo").style.display=VONLINK?"block":"none"; $("c-hallo").textContent="Hallo "+(S.name||"")+"!"; return show("v-consent"); }
   if(S.aktiv && S.aktiv.ende) return show("v-fertig");
-  if(S.aktiv){ $("a-los").textContent="Los "+S.aktiv.los; $("a-zeit").textContent="seit "+fmt(S.aktiv.start); return show("v-aktiv"); }
+  if(S.aktiv){ $("a-los").textContent="Los "+S.aktiv.los; $("a-strecke").textContent=streckeText(S.aktiv.los); $("a-zeit").textContent="seit "+fmt(S.aktiv.start); return show("v-aktiv"); }
   show("v-start");
 }
 $("c-go").onclick=()=>{
@@ -223,7 +253,7 @@ $("e-go").onclick=()=>{
 };
 $("f-nochmal").onclick=()=>endMail();
 $("f-kopie").onclick=()=>endMail(true);
-$("f-neu").onclick=()=>{ delete S.aktiv; save(S); ["e-person","e-anschrift","e-geb","e-bem"].forEach(i=>$(i).value=""); $("e-polizei").checked=false; document.querySelectorAll(".art").forEach(c=>c.checked=false); $("s-los").value=""; route(); };
+$("f-neu").onclick=()=>{ delete S.aktiv; save(S); ["e-person","e-anschrift","e-geb","e-bem"].forEach(i=>$(i).value=""); $("e-polizei").checked=false; document.querySelectorAll(".art").forEach(c=>c.checked=false); $("s-los").value=""; zeigeInfo(); route(); };
 route();
 </script>
 </body>
