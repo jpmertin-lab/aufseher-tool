@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Links erzeugen – FG Mittlere Wupper</title>
+<style>
+:root{--gruen:#7d9230;--hell:#f2f5e6;--rand:#c9d1ad}
+*{box-sizing:border-box}
+body{margin:0;font:18px/1.5 "DM Sans","Helvetica Neue",Arial,sans-serif;color:#222}
+header{padding:16px 20px;border-bottom:4px solid var(--gruen)}
+header h1{margin:0;font-size:1.1rem}
+main{max-width:720px;margin:0 auto;padding:20px}
+textarea{width:100%;min-height:180px;font:inherit;padding:12px;border:2px solid #777;border-radius:8px}
+button{font:inherit;font-weight:700;padding:12px 16px;border:0;border-radius:8px;background:var(--gruen);color:#fff;cursor:pointer;margin:6px 6px 0 0}
+button.z{background:#fff;color:#222;border:2px solid #777}
+.zeile{background:var(--hell);border:2px solid var(--rand);border-radius:10px;padding:12px;margin:12px 0;word-break:break-all}
+.zeile b{display:block;word-break:normal}
+.klein{font-size:.85rem;color:#555}
+</style>
+</head>
+<body>
+<header><h1>Persönliche Links für die Fischereiaufseher</h1></header>
+<main>
+<p>Ein Name pro Zeile, so wie er in der Mail stehen soll (z. B. „Max Mustermann“).</p>
+<textarea id="namen" placeholder="Max Mustermann&#10;Erika Beispiel"></textarea>
+<p class="klein" style="margin-top:16px">Adresse der Kontroll-Seite (nur nötig, wenn diese Seite nicht direkt bei GitHub geöffnet ist):</p>
+<input type="text" id="adresse" placeholder="https://…/index.html" style="width:100%;font:inherit;padding:12px;border:2px solid #777;border-radius:8px">
+<button id="go">Links erzeugen</button>
+<div id="out"></div>
+<p class="klein">Diese Seite muss im selben Ordner liegen wie index.html. Die Links führen zur Kontroll-Seite und tragen den Namen schon in sich.</p>
+</main>
+<script>
+const $ = id => document.getElementById(id);
+function kopiere(t, knopf){
+  const ok = () => { const alt = knopf.textContent; knopf.textContent = "Kopiert ✓"; setTimeout(()=>knopf.textContent = alt, 1500); };
+  const fb = () => { const a=document.createElement("textarea"); a.value=t; document.body.appendChild(a); a.select(); try{ document.execCommand("copy"); ok(); }catch(e){ prompt("Bitte selbst kopieren:", t); } a.remove(); };
+  if(navigator.clipboard && navigator.clipboard.writeText){ navigator.clipboard.writeText(t).then(ok, fb); } else { fb(); }
+}
+$("go").onclick = () => {
+  let base = "";
+  try{
+    const f = $("adresse").value.trim();
+    if(f){ base = /\.html?$/i.test(f) ? f : f.replace(/\/+$/,"") + "/index.html"; new URL(base); }
+    else if(/^https?:/.test(location.protocol)){ base = new URL("index.html", location.href).href; }
+  }catch(e){ base = ""; }
+  if(!base){ $("out").textContent = "Bitte trage oben die Internetadresse deiner Kontroll-Seite ein (die Adresse von index.html bei GitHub)."; return; }
+  const namen = $("namen").value.split("\n").map(n=>n.trim()).filter(Boolean);
+  const out = $("out"); out.innerHTML = "";
+  namen.forEach(n => {
+    const link = base + "?name=" + encodeURIComponent(n);
+    const z = document.createElement("div"); z.className = "zeile";
+    const b = document.createElement("b"); b.textContent = n;
+    const l = document.createElement("span"); l.textContent = link;
+    const k = document.createElement("button"); k.textContent = "Link kopieren"; k.onclick = () => kopiere(link, k);
+    const w = document.createElement("button"); w.className = "z"; w.textContent = "Per WhatsApp senden";
+    w.onclick = () => window.open("https://wa.me/?text=" + encodeURIComponent("Hallo " + n + ", hier ist dein persönlicher Link für die Kontrollmeldung der FG Mittlere Wupper: " + link), "_blank");
+    z.append(b, l, document.createElement("br"), k, w);
+    out.appendChild(z);
+  });
+  if(!namen.length) out.textContent = "Bitte zuerst Namen eintragen.";
+};
+</script>
+</body>
+</html>

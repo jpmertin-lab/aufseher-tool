@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Kontrollmeldung – FG Mittlere Wupper</title>
+<style>
+:root{--gruen:#7d9230;--gruen-d:#5f7122;--hell:#f2f5e6;--text:#222;--rot:#a3261d;--rand:#c9d1ad}
+*{box-sizing:border-box}
+html{font-size:20px}
+body{margin:0;font-family:"DM Sans","Helvetica Neue",Arial,sans-serif;color:var(--text);background:#fff;line-height:1.5}
+header{padding:16px 20px;border-bottom:4px solid var(--gruen)}
+header h1{margin:0;font-size:1.1rem;font-weight:600}
+header p{margin:0;font-size:.8rem;color:#555}
+main{max-width:640px;margin:0 auto;padding:20px}
+.demo{background:#fff3cd;border:2px solid #d9a800;padding:10px 14px;border-radius:8px;font-size:.8rem;margin-bottom:16px}
+.view{display:none}.view.on{display:block}
+h2{font-size:1.3rem;margin:0 0 12px}
+label{display:block;font-weight:600;margin:16px 0 6px}
+input[type=text],input[type=date],select,textarea{width:100%;font:inherit;padding:14px;border:2px solid #777;border-radius:8px;background:#fff;color:var(--text)}
+textarea{min-height:90px}
+button{font:inherit;font-weight:700;width:100%;padding:20px;border:0;border-radius:10px;margin-top:16px;cursor:pointer;color:#fff;background:var(--gruen);min-height:64px}
+button:active{background:var(--gruen-d)}
+button.rot{background:var(--rot)}
+button.zweit{background:#fff;color:var(--text);border:2px solid #777}
+:focus-visible{outline:4px solid #1a6fd1;outline-offset:2px}
+.box{background:var(--hell);border:2px solid var(--rand);border-radius:10px;padding:14px 16px;margin:16px 0}
+.warn{background:#fff3cd;border-color:#d9a800}
+.aktiv{background:var(--gruen);color:#fff;border-radius:10px;padding:18px;text-align:center}
+.aktiv b{display:block;font-size:1.6rem}
+.chk{display:flex;gap:12px;align-items:flex-start;padding:10px 0;font-weight:400;margin:0}
+.chk input{width:28px;height:28px;flex:none;margin-top:2px}
+.jn{display:flex;gap:12px}.jn button{margin-top:8px}
+.jn button.sel{outline:4px solid #1a6fd1}
+fieldset{border:2px solid var(--rand);border-radius:10px;margin:14px 0;padding:6px 14px}
+legend{font-weight:700;padding:0 6px}
+.klein{font-size:.8rem;color:#555}
+</style>
+</head>
+<body>
+<header><h1>Fischereigenossenschaft Mittlere Wupper</h1><p>Kontrollmeldung für Fischereiaufseher</p></header>
+<main>
+<div class="demo" id="demo">Demo-Version: Alle Mails gehen an die Testadresse.</div>
+
+<!-- 1. Einverständnis beim ersten Start -->
+<section class="view" id="v-consent">
+  <h2>Willkommen</h2>
+  <div class="box">
+    <p>Mit diesem Tool bereitest du die Meldungen an die untere Fischereibehörde der Stadt Wuppertal vor. Die Fischereigenossenschaft Mittlere Wupper erhält eine Kopie.</p>
+    <p>Dein Name, das Los, die Zeiten und eventuelle Feststellungen stehen dabei in der Mail. Das Tool selbst speichert nichts auf einem Server, nur auf deinem Gerät.</p>
+    <p class="klein">Platzhalter: Der endgültige Datenschutztext wird von der Genossenschaft festgelegt.</p>
+  </div>
+  <p id="c-hallo" style="display:none;font-size:1.2rem;font-weight:600"></p>
+  <div id="c-namefeld">
+    <label>Dein Name</label>
+    <input type="text" id="c-name" autocomplete="name" placeholder="Vor- und Nachname">
+  </div>
+  <label class="chk"><input type="checkbox" id="c-ok"> Ich habe das gelesen und bin einverstanden.</label>
+  <button id="c-go">Weiter</button>
+</section>
+
+<!-- 2. Start -->
+<section class="view" id="v-start">
+  <h2>Neue Kontrolle</h2>
+  <label for="s-los">Welches Los kontrollierst du?</label>
+  <select id="s-los"></select>
+  <button id="s-go">Kontrolle starten</button>
+  <p class="klein">Beim Start öffnet sich dein Mailprogramm mit fertiger Mail. Dort nur noch auf „Senden“ tippen.</p>
+  <p class="klein"><a href="#" id="s-name">Name ändern</a></p>
+</section>
+
+<!-- 3. Läuft -->
+<section class="view" id="v-aktiv">
+  <div class="aktiv"><span>Kontrolle läuft</span><b id="a-los"></b><span id="a-zeit"></span></div>
+  <div class="box warn">Los gewechselt? Bitte zuerst die Kontrolle beenden und für das neue Los eine neue Kontrolle starten, damit die Meldung an die untere Fischereibehörde der Stadt Wuppertal für dieses Los vorliegt.</div>
+  <button class="rot" id="a-ende">Kontrolle beenden</button>
+  <button class="zweit" id="a-nochmal">Startmail noch einmal öffnen</button>
+  <button class="zweit" id="a-kopie">Mail öffnet sich nicht? Text kopieren</button>
+</section>
+
+<!-- 4. Ende -->
+<section class="view" id="v-ende">
+  <h2>Kontrolle beenden</h2>
+  <p id="e-info" class="klein"></p>
+  <label class="chk"><input type="checkbox" id="e-app"> Mindestens ein Angelschein wurde mit der digitalen Kontroll-App geprüft.</label>
+  <h2 style="margin-top:20px">Gab es Verstöße?</h2>
+  <div class="jn">
+    <button class="zweit" id="e-nein">Nein</button>
+    <button class="zweit" id="e-ja">Ja</button>
+  </div>
+  <div id="e-form" style="display:none">
+    <div id="e-arten"></div>
+    <label for="e-person">Name der Person</label>
+    <input type="text" id="e-person">
+    <label for="e-anschrift">Anschrift</label>
+    <input type="text" id="e-anschrift">
+    <label for="e-geb">Geburtsdatum</label>
+    <input type="date" id="e-geb">
+    <label class="chk"><input type="checkbox" id="e-polizei"> Polizei wurde hinzugezogen (kein Ausweis dabei)</label>
+    <label for="e-bem">Bemerkung</label>
+    <textarea id="e-bem"></textarea>
+  </div>
+  <button id="e-go" disabled>Abschlussmail vorbereiten</button>
+  <button class="zweit" id="e-zurueck">Zurück zur Kontrolle</button>
+</section>
+
+<!-- 5. Fertig -->
+<section class="view" id="v-fertig">
+  <h2>Fast geschafft</h2>
+  <div class="box warn">Dein Mailprogramm hat sich geöffnet. Bitte dort auf <b>Senden</b> tippen, sonst ist die Meldung nicht raus.</div>
+  <button class="zweit" id="f-nochmal">Abschlussmail noch einmal öffnen</button>
+  <button class="zweit" id="f-kopie">Mail öffnet sich nicht? Text kopieren</button>
+  <button id="f-neu">Neue Kontrolle</button>
+</section>
+</main>
+
+<script>
+/* ===== EINSTELLUNGEN – nur hier ändern ===== */
+const CONFIG = {
+  EMPFAENGER: "DEINE-TESTADRESSE@example.de",  // später: Adresse der unteren Fischereibehörde der Stadt Wuppertal
+  KOPIE:      "DEINE-TESTADRESSE@example.de",  // später: Adresse der Fischereigenossenschaft Mittlere Wupper
+  DEMO: true                                    // false = gelben Demo-Hinweis ausblenden
+};
+const LOSE = ["I","II","III","IV","V","VI","VII","VIII","IX","X","XI","XII","XIII"];
+const ARTEN = {
+  "Papiere": ["Kein gültiger Fischereischein vorhanden","Abgelaufener Fischereischein","Fischereischein ohne Erlaubnisschein für die Wupper","Erlaubnisschein für dieses Los nicht gültig"],
+  "Fangen und Angeln": ["Fischentnahme in der Schonzeit","Fisch unter dem Mindestmaß entnommen","Fangbegrenzung überschritten","Mehr Ruten als erlaubt","Verbotene Methode oder verbotener Köder","Angeln in gesperrter Strecke"],
+  "Umgang mit den Tieren": ["Tierquälerei (z. B. Fisch nicht fachgerecht betäubt und getötet)","Unzulässige Fischhälterung"],
+  "Sonstiges": ["Sonstiges (siehe Bemerkung)"]
+};
+/* ===== Ende Einstellungen ===== */
+
+const KEY = "fgmw_kontrolle_v1";
+let mem = {};
+function load(){ try{ return JSON.parse(localStorage.getItem(KEY)) || {}; }catch(e){ return mem; } }
+function save(s){ mem = s; try{ localStorage.setItem(KEY, JSON.stringify(s)); }catch(e){} }
+let S = load();
+let VONLINK = false;
+(function(){ const p=new URLSearchParams(location.search).get("name"); if(p&&p.trim()){ const n=p.trim().slice(0,80); VONLINK=true; if(S.name!==n){ S.name=n; S.ok=false; } save(S); } })();
+const $ = id => document.getElementById(id);
+function show(id){ document.querySelectorAll(".view").forEach(v=>v.classList.remove("on")); $(id).classList.add("on"); window.scrollTo(0,0); }
+function fmt(iso){ return new Date(iso).toLocaleString("de-DE",{day:"2-digit",month:"2-digit",year:"numeric",hour:"2-digit",minute:"2-digit"})+" Uhr"; }
+function mail(betreff, text){
+  const url = "mailto:"+encodeURIComponent(CONFIG.EMPFAENGER)+"?cc="+encodeURIComponent(CONFIG.KOPIE)+
+    "&subject="+encodeURIComponent(betreff)+"&body="+encodeURIComponent(text.replace(/\n/g,"\r\n"));
+  location.href = url;
+}
+function kopieren(betreff, text){
+  const voll = "An: "+CONFIG.EMPFAENGER+"\nCC: "+CONFIG.KOPIE+"\nBetreff: "+betreff+"\n\n"+text;
+  const fertig = ()=>alert("Der Mailtext ist kopiert. Öffne dein Mailprogramm, füge den Text ein und sende ihn an die Adresse, die oben im Text steht.");
+  const fb = t=>{ const a=document.createElement("textarea"); a.value=t; document.body.appendChild(a); a.select(); try{ document.execCommand("copy"); fertig(); }catch(e){ prompt("Bitte den Text selbst kopieren:", t); } a.remove(); };
+  if(navigator.clipboard && navigator.clipboard.writeText){ navigator.clipboard.writeText(voll).then(fertig, ()=>fb(voll)); } else { fb(voll); }
+}
+const KOPF = "Meldung an die untere Fischereibehörde der Stadt Wuppertal\nFischereigenossenschaft Mittlere Wupper\n\n";
+
+function startMail(k){
+  (k?kopieren:mail)("Kontrolle begonnen – Los "+S.aktiv.los+" – "+S.name,
+    KOPF+"Die Kontrolle hat begonnen.\n\nFischereiaufseher: "+S.name+"\nLos: "+S.aktiv.los+"\nBeginn: "+fmt(S.aktiv.start)+"\n\nMit freundlichen Grüßen\n"+S.name);
+}
+function endMail(k){
+  const e = S.aktiv.ende;
+  let t = KOPF+"Die Kontrolle ist beendet.\n\nFischereiaufseher: "+S.name+"\nLos: "+S.aktiv.los+
+    "\nBeginn: "+fmt(S.aktiv.start)+"\nEnde: "+fmt(e.zeit)+
+    "\nPrüfung mit digitaler Kontroll-App: "+(e.app?"Ja":"Nein (Sichtkontrolle)")+"\n\n";
+  if(!e.verstoss){ t += "Verstöße: Keine\n"; }
+  else{
+    t += "Verstöße: Ja\n"+e.arten.map(a=>" - "+a).join("\n")+"\n\nPerson\nName: "+(e.person||"-")+"\nAnschrift: "+(e.anschrift||"-")+
+      "\nGeburtsdatum: "+(e.geb?new Date(e.geb).toLocaleDateString("de-DE"):"-")+"\nPolizei hinzugezogen: "+(e.polizei?"Ja":"Nein")+"\nBemerkung: "+(e.bem||"-")+"\n";
+  }
+  t += "\nMit freundlichen Grüßen\n"+S.name;
+  (k?kopieren:mail)("Kontrolle beendet – Los "+S.aktiv.los+" – "+S.name+(e.verstoss?" – mit Verstößen":" – ohne Verstöße"), t);
+}
+
+/* Aufbau */
+LOSE.forEach(l=>{ const o=document.createElement("option"); o.value=l; o.textContent="Los "+l; $("s-los").appendChild(o); });
+const ph=document.createElement("option"); ph.value=""; ph.textContent="Bitte Los wählen …"; $("s-los").prepend(ph); $("s-los").value="";
+Object.keys(ARTEN).forEach(g=>{
+  const f=document.createElement("fieldset"), l=document.createElement("legend"); l.textContent=g; f.appendChild(l);
+  ARTEN[g].forEach(a=>{ const lb=document.createElement("label"); lb.className="chk"; lb.innerHTML='<input type="checkbox" class="art"> <span></span>'; lb.querySelector("span").textContent=a; f.appendChild(lb); });
+  $("e-arten").appendChild(f);
+});
+if(!CONFIG.DEMO) $("demo").style.display="none";
+
+/* Ablauf */
+function route(){
+  $("s-name").parentElement.style.display=VONLINK?"none":"";
+  if(!S.ok){ $("c-name").value=S.name||""; $("c-namefeld").style.display=VONLINK?"none":""; $("c-hallo").style.display=VONLINK?"block":"none"; $("c-hallo").textContent="Hallo "+(S.name||"")+"!"; return show("v-consent"); }
+  if(S.aktiv && S.aktiv.ende) return show("v-fertig");
+  if(S.aktiv){ $("a-los").textContent="Los "+S.aktiv.los; $("a-zeit").textContent="seit "+fmt(S.aktiv.start); return show("v-aktiv"); }
+  show("v-start");
+}
+$("c-go").onclick=()=>{
+  const n=$("c-name").value.trim();
+  if(!n){ alert("Bitte gib deinen Namen ein."); return; }
+  if(!$("c-ok").checked){ alert("Bitte setze den Haken bei „einverstanden“."); return; }
+  S.ok=true; S.name=n; save(S); route();
+};
+$("s-name").onclick=e=>{ e.preventDefault(); S.ok=false; save(S); $("c-name").value=S.name||""; $("c-ok").checked=false; route(); };
+$("s-go").onclick=()=>{
+  if(!$("s-los").value){ alert("Bitte wähle zuerst das Los."); return; }
+  S.aktiv={los:$("s-los").value,start:new Date().toISOString()}; save(S); route(); startMail();
+};
+$("a-nochmal").onclick=()=>startMail();
+$("a-kopie").onclick=()=>startMail(true);
+$("a-ende").onclick=()=>{
+  S.aktiv.endeZeit=new Date().toISOString(); save(S);
+  $("e-info").textContent="Los "+S.aktiv.los+", Ende: "+fmt(S.aktiv.endeZeit);
+  $("e-app").checked=false; $("e-form").style.display="none"; $("e-go").disabled=true; verstoss=null;
+  ["e-nein","e-ja"].forEach(i=>$(i).classList.remove("sel"));
+  show("v-ende");
+};
+let verstoss=null;
+function wahl(v){ verstoss=v; $("e-nein").classList.toggle("sel",!v); $("e-ja").classList.toggle("sel",v); $("e-form").style.display=v?"block":"none"; $("e-go").disabled=false; }
+$("e-nein").onclick=()=>wahl(false);
+$("e-ja").onclick=()=>wahl(true);
+$("e-zurueck").onclick=()=>{ delete S.aktiv.endeZeit; save(S); route(); };
+$("e-go").onclick=()=>{
+  const arten=[...document.querySelectorAll(".art")].filter(c=>c.checked).map(c=>c.nextElementSibling.textContent);
+  if(verstoss && !arten.length){ alert("Bitte wähle mindestens eine Verstoßart aus."); return; }
+  S.aktiv.ende={zeit:S.aktiv.endeZeit,app:$("e-app").checked,verstoss:verstoss,arten:arten,person:$("e-person").value.trim(),
+    anschrift:$("e-anschrift").value.trim(),geb:$("e-geb").value,polizei:$("e-polizei").checked,bem:$("e-bem").value.trim()};
+  save(S); route(); endMail();
+};
+$("f-nochmal").onclick=()=>endMail();
+$("f-kopie").onclick=()=>endMail(true);
+$("f-neu").onclick=()=>{ delete S.aktiv; save(S); ["e-person","e-anschrift","e-geb","e-bem"].forEach(i=>$(i).value=""); $("e-polizei").checked=false; document.querySelectorAll(".art").forEach(c=>c.checked=false); $("s-los").value=""; route(); };
+route();
+</script>
+</body>
+</html>
